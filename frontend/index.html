@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>我的全栈控制台</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding-top: 100px; }
+        h1 { color: #333; margin-bottom: 40px; }
+        .grid { display: flex; gap: 20px; }
+        .app-card { background: white; padding: 30px; border-radius: 12px; width: 200px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; text-decoration: none; color: inherit; transition: 0.3s; }
+        .app-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        .icon { font-size: 40px; margin-bottom: 15px; }
+        .title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .desc { font-size: 13px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>🚀 我的全栈控制台</h1>
+    <div class="grid">
+        <a href="/weather.html" class="app-card">
+            <div class="icon">⛅</div>
+            <div class="title">AI 毒舌早报</div>
+            <div class="desc">结合国内气象局数据的私人助理</div>
+        </a>
+        <a href="/draw.html" class="app-card">
+            <div class="icon">🎨</div>
+            <div class="title">你画我猜发牌器</div>
+            <div class="desc">由 DeepSeek V3 驱动的智能词库</div>
+        </a>
+    </div>
+</body>
+</html>

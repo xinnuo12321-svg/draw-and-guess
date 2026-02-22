@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek 私人情报站</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 50px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+        button { background: #1a73e8; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #1557b0; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #report-box { margin-top: 25px; padding: 20px; background: #e8f0fe; border-left: 5px solid #1a73e8; border-radius: 4px; text-align: left; font-size: 16px; line-height: 1.6; color: #333; display: none; }
+        .spinner { font-size: 14px; color: #666; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>🤖 DeepSeek V3 专属早报</h2>
+        <p style="color: #666; font-size: 14px;">自动抓取公开天气 -> 喂给 V3 引擎 -> 生成私人播报</p>
+        
+        <button id="btn" onclick="generateReport()">一键生成今日早报</button>
+        <div id="loading" class="spinner">🧠 AI 正在极速思考中 (大约需要 3-5 秒)...</div>
+        
+        <div id="report-box"></div>
+    </div>
+
+    <script>
+        async function generateReport() {
+            const btn = document.getElementById('btn');
+            const loading = document.getElementById('loading');
+            const reportBox = document.getElementById('report-box');
+            
+            // 状态改变：按钮变灰，显示加载文字
+            btn.disabled = true;
+            loading.style.display = "block";
+            reportBox.style.display = "none";
+            
+            try {
+                // 向你的 FastAPI 后端要数据
+                const response = await fetch('http://127.0.0.1:8000/api/report');
+                const data = await response.json();
+                
+                // 把 AI 写的话显示出来
+                reportBox.innerHTML = `<strong>📡 V3 播报：</strong><br><br>${data.ai_report}`;
+                reportBox.style.display = "block";
+            } catch (error) {
+                reportBox.innerHTML = "❌ 请求服务器失败，请检查 main.py 是否正在运行。";
+                reportBox.style.display = "block";
+            } finally {
+                // 恢复按钮状态
+                btn.disabled = false;
+                loading.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
