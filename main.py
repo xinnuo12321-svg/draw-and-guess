@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -7,9 +8,14 @@ import httpx
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
-# 1. 加载配置
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 API_KEY = os.getenv("SILICONFLOW_API_KEY")
+
+if not API_KEY:
+    logger.error("SILICONFLOW_API_KEY not found in environment variables")
 
 client = AsyncOpenAI(
     api_key=API_KEY,
@@ -24,6 +30,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # ==========================================
@@ -43,8 +50,10 @@ async def generate_morning_report():
                 weather_info = f"{city}今天{forecast['type']}，{forecast['low']}到{forecast['high']}。提示：{forecast['notice']}"
             else:
                 weather_info = "气象局接口开了小差"
+                logger.warning(f"Weather API returned status: {data.get('status')}")
     except Exception as e:
         weather_info = "天气获取失败"
+        logger.error(f"Failed to fetch weather: {str(e)}")
 
     # 调用 DeepSeek V3 生成早报
     system_prompt = "你是一个幽默、毒舌但贴心的私人助理。请根据我提供的数据，写一段100字以内的早安播报。"
@@ -56,9 +65,10 @@ async def generate_morning_report():
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
             temperature=0.7
         )
-        ai_report = completion.choices[0].message.content
+        ai_report = completion.choices[0].message.content or "AI没有返回内容"
     except Exception as e:
         ai_report = f"AI 大脑连接失败，错误详情: {e}"
+        logger.error(f"Failed to generate morning report: {str(e)}")
 
     return {"status": "success", "ai_report": ai_report}
 
@@ -80,9 +90,16 @@ async def draw_card():
             temperature=0.9, 
             response_format={"type": "json_object"} # 强制返回 JSON
         )
-        card_data = json.loads(completion.choices[0].message.content)
+        content = completion.choices[0].message.content
+        if not content:
+            raise ValueError("Empty response from AI")
+        card_data = json.loads(content)
         return {"status": "success", "data": card_data}
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse card data JSON: {str(e)}")
+        return {"status": "error", "data": {"word": "数据解析失败", "category": "错误", "hint": "请重试"}}
     except Exception as e:
+        logger.error(f"Failed to draw card: {str(e)}")
         return {"status": "error", "data": {"word": "发牌失败", "category": "错误", "hint": "请检查网络或余额"}}
 
 # ==========================================
@@ -93,4 +110,6 @@ app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host=host, port=port)

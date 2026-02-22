@@ -78,7 +78,7 @@
             timerEl.innerText = "60s";
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/draw_card');
+                const response = await fetch('/api/draw_card');
                 const result = await response.json();
                 if(result.status === "success") {
                     currentWord = result.data.word; // 记下当前的词语
