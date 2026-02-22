@@ -3,55 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>毒舌天气预报</title>
+    <title>DeepSeek 私人情报站</title>
     <style>
-        body { margin: 0; padding: 0; font-family: 'PingFang SC', sans-serif; background-color: #81ecec; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; position: relative; }
-        .back-home { position: absolute; top: 20px; left: 20px; color: #333; text-decoration: none; font-weight: bold; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .card { background: white; width: 320px; min-height: 400px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; padding: 30px 20px; box-sizing: border-box;}
-        .title-icon { font-size: 50px; margin-bottom: 10px; }
-        .input-group { display: flex; width: 100%; margin-top: 20px; }
-        input { flex: 1; padding: 12px; border: 2px solid #dfe6e9; border-radius: 10px 0 0 10px; outline: none; font-size: 16px; }
-        button { background: #00cec9; color: white; border: none; padding: 12px 20px; border-radius: 0 10px 10px 0; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #01aba7; }
-        .report-box { margin-top: 30px; background: #f5f6fa; padding: 20px; border-radius: 15px; width: 100%; box-sizing: border-box; color: #2d3436; font-size: 16px; line-height: 1.6; min-height: 100px; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 50px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+        button { background: #1a73e8; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #1557b0; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #report-box { margin-top: 25px; padding: 20px; background: #e8f0fe; border-left: 5px solid #1a73e8; border-radius: 4px; text-align: left; font-size: 16px; line-height: 1.6; color: #333; display: none; }
+        .spinner { font-size: 14px; color: #666; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
-    <a href="/index.html" class="back-home">⬅ 返回大厅</a>
 
     <div class="card">
-        <div class="title-icon">🌤️</div>
-        <h2 style="margin: 0; color: #2d3436;">AI 毒舌天气</h2>
+        <h2>🤖 DeepSeek V3 专属早报</h2>
+        <p style="color: #666; font-size: 14px;">自动抓取公开天气 -> 喂给 V3 引擎 -> 生成私人播报</p>
         
-        <div class="input-group">
-            <input type="text" id="cityInput" placeholder="输入城市，比如：北京" value="北京">
-            <button onclick="getWeather()">查天气</button>
-        </div>
-
-        <div class="report-box" id="reportContent">
-            敢不敢告诉我你在哪？让我看看你今天出门需不需要带脑子（和伞）。
-        </div>
+        <button id="btn" onclick="generateReport()">一键生成今日早报</button>
+        <div id="loading" class="spinner">🧠 AI 正在极速思考中 (大约需要 3-5 秒)...</div>
+        
+        <div id="report-box"></div>
     </div>
 
     <script>
-        async function getWeather() {
-            const city = document.getElementById('cityInput').value || '北京';
-            const reportBox = document.getElementById('reportContent');
-            reportBox.innerText = "正在夜观天象，顺便组织吐槽语言...";
-
+        async function generateReport() {
+            const btn = document.getElementById('btn');
+            const loading = document.getElementById('loading');
+            const reportBox = document.getElementById('report-box');
+            
+            // 状态改变：按钮变灰，显示加载文字
+            btn.disabled = true;
+            loading.style.display = "block";
+            reportBox.style.display = "none";
+            
             try {
-                // 核心雷区已排：绝对相对路径！
-                const response = await fetch(`/api/weather?city=${city}`);
+                // 向你的 FastAPI 后端要数据
+                const response = await fetch('http://127.0.0.1:8000/api/report');
                 const data = await response.json();
                 
-                if (data.status === "success") {
-                    reportBox.innerText = data.report;
-                } else {
-                    reportBox.innerText = "气象卫星被外星人打劫了：" + data.message.substring(0, 15);
-                }
+                // 把 AI 写的话显示出来
+                reportBox.innerHTML = `<strong>📡 V3 播报：</strong><br><br>${data.ai_report}`;
+                reportBox.style.display = "block";
             } catch (error) {
-                reportBox.innerText = "网络断开！赶紧检查一下是不是 Render 睡着了。";
-                console.error("Fetch Error:", error);
+                reportBox.innerHTML = "❌ 请求服务器失败，请检查 main.py 是否正在运行。";
+                reportBox.style.display = "block";
+            } finally {
+                // 恢复按钮状态
+                btn.disabled = false;
+                loading.style.display = "none";
             }
         }
     </script>

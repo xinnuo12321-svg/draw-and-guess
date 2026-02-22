@@ -2,51 +2,31 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepSeek 私人情报站</title>
+    <title>我的全栈控制台</title>
     <style>
-        body { font-family: 'Microsoft YaHei', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 50px; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
-        button { background: #1a73e8; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #1557b0; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #report-box { margin-top: 25px; padding: 20px; background: #e8f0fe; border-left: 5px solid #1a73e8; border-radius: 4px; text-align: left; font-size: 16px; line-height: 1.6; color: #333; display: none; }
-        .spinner { font-size: 14px; color: #666; margin-top: 15px; display: none; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding-top: 100px; }
+        h1 { color: #333; margin-bottom: 40px; }
+        .grid { display: flex; gap: 20px; }
+        .app-card { background: white; padding: 30px; border-radius: 12px; width: 200px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; text-decoration: none; color: inherit; transition: 0.3s; }
+        .app-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        .icon { font-size: 40px; margin-bottom: 15px; }
+        .title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .desc { font-size: 13px; color: #666; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>🤖 DeepSeek V3 专属早报</h2>
-        <p style="color: #666; font-size: 14px;">自动抓取公开天气 -> 喂给 V3 引擎 -> 生成私人播报</p>
-        <button id="btn" onclick="generateReport()">一键生成今日早报</button>
-        <div id="loading" class="spinner">🧠 AI 正在极速思考中...</div>
-        <div id="report-box"></div>
-        <br><br>
-        <a href="/draw.html" style="color: #1a73e8; font-weight: bold;">➡️ 切换到你画我猜</a>
+    <h1>🚀 我的全栈控制台</h1>
+    <div class="grid">
+        <a href="/weather.html" class="app-card">
+            <div class="icon">⛅</div>
+            <div class="title">AI 毒舌早报</div>
+            <div class="desc">结合国内气象局数据的私人助理</div>
+        </a>
+        <a href="/draw.html" class="app-card">
+            <div class="icon">🎨</div>
+            <div class="title">你画我猜发牌器</div>
+            <div class="desc">由 DeepSeek V3 驱动的智能词库</div>
+        </a>
     </div>
-
-    <script>
-        async function generateReport() {
-            const btn = document.getElementById('btn');
-            const loading = document.getElementById('loading');
-            const reportBox = document.getElementById('report-box');
-            btn.disabled = true;
-            loading.style.display = "block";
-            reportBox.style.display = "none";
-            try {
-                // 【核心修复】改为相对路径
-                const response = await fetch('/api/report');
-                const data = await response.json();
-                reportBox.innerHTML = `<strong>📡 V3 播报：</strong><br><br>${data.ai_report}`;
-                reportBox.style.display = "block";
-            } catch (error) {
-                reportBox.innerHTML = "❌ 请求服务器失败。";
-                reportBox.style.display = "block";
-            } finally {
-                btn.disabled = false;
-                loading.style.display = "none";
-            }
-        }
-    </script>
 </body>
 </html>
