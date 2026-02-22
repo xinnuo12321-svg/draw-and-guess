@@ -2,30 +2,37 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>我的全栈控制台</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XinNuo 的全栈实验室</title>
     <style>
-        body { font-family: 'Microsoft YaHei', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding-top: 100px; }
-        h1 { color: #333; margin-bottom: 40px; }
-        .grid { display: flex; gap: 20px; }
-        .app-card { background: white; padding: 30px; border-radius: 12px; width: 200px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; text-decoration: none; color: inherit; transition: 0.3s; }
-        .app-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-        .icon { font-size: 40px; margin-bottom: 15px; }
-        .title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-        .desc { font-size: 13px; color: #666; }
+        body { font-family: 'PingFang SC', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { color: #333; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; width: 100%; max-width: 800px; }
+        .app-card { background: white; padding: 30px 20px; border-radius: 15px; text-align: center; text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; }
+        .app-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .icon { font-size: 40px; margin-bottom: 10px; }
+        .title { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+        .desc { font-size: 12px; color: #888; }
     </style>
 </head>
 <body>
-    <h1>🚀 我的全栈控制台</h1>
+    <div class="header">
+        <h1>🚀 XinNuo 的项目大厅</h1>
+        <p>基于 FastAPI + Vue + AI 大模型构建</p>
+    </div>
+
     <div class="grid">
-        <a href="/weather.html" class="app-card">
-            <div class="icon">⛅</div>
-            <div class="title">AI 毒舌早报</div>
-            <div class="desc">结合国内气象局数据的私人助理</div>
-        </a>
         <a href="/draw.html" class="app-card">
             <div class="icon">🎨</div>
-            <div class="title">你画我猜发牌器</div>
-            <div class="desc">由 DeepSeek V3 驱动的智能词库</div>
+            <div class="title">你画我猜</div>
+            <div class="desc">DeepSeek 自动出题器</div>
+        </a>
+
+        <a href="#" class="app-card" style="opacity: 0.5; cursor: not-allowed;">
+            <div class="icon">🦁</div>
+            <div class="title">动物剧场</div>
+            <div class="desc">建设中...</div>
         </a>
     </div>
 </body>

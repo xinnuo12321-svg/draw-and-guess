@@ -2,139 +2,68 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>你画我猜 - 终极发牌器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 你画我猜发牌器</title>
     <style>
-        body { font-family: 'Microsoft YaHei', sans-serif; background-color: #ffde59; display: flex; flex-direction: column; align-items: center; padding: 40px 0; margin: 0; min-height: 100vh; }
+        body { margin: 0; padding: 0; font-family: 'PingFang SC', sans-serif; background-color: #fcd53f; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; position: relative; }
         .back-home { position: absolute; top: 20px; left: 20px; color: #333; text-decoration: none; font-weight: bold; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        
-        .card { background: white; width: 320px; height: 380px; border-radius: 20px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 20px; text-align: center; z-index: 10; }
-        .category { position: absolute; top: 20px; background: #ff5757; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold; }
-        .word { font-size: 44px; font-weight: 900; color: #333; margin: 20px 0; letter-spacing: 2px; }
-        .hint { font-size: 16px; color: #666; margin-bottom: 20px; }
-        .timer { font-size: 36px; font-weight: bold; color: #1a73e8; font-family: monospace; }
-        
-        /* 操作按钮组 */
-        .action-group { margin-top: 20px; display: flex; gap: 15px; display: none; /* 初始隐藏，抽牌后显示 */ }
-        .btn-correct { background: #00c853; color: white; border: none; padding: 12px 25px; font-size: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; }
-        .btn-wrong { background: #ff3d00; color: white; border: none; padding: 12px 25px; font-size: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; }
-        
-        .btn-draw { margin-top: 30px; background: #1a73e8; color: white; border: none; padding: 15px 40px; font-size: 20px; font-weight: bold; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(26,115,232,0.4); }
-        .btn-draw:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
-
-        /* 历史记录板 */
-        .history-board { margin-top: 40px; background: white; width: 320px; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .history-board h3 { margin-top: 0; text-align: center; color: #333; }
-        .history-list { list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto; }
-        .history-list li { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; font-size: 16px; }
-        .status-yes { color: #00c853; font-weight: bold; }
-        .status-no { color: #ff3d00; font-weight: bold; }
+        .card { background: white; width: 300px; height: 400px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .category { background: #ff4757; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; position: absolute; top: 20px; }
+        .word { font-size: 48px; font-weight: 900; color: #333; margin: 20px 0; }
+        .timer { font-size: 30px; color: #2e86de; font-family: monospace; }
+        .btn { margin-top: 30px; background: #2e86de; color: white; border: none; padding: 15px 40px; font-size: 18px; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(46, 134, 222, 0.4); }
+        .btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
-    <a href="/" class="back-home">⬅ 返回大厅</a>
-    
+    <a href="/index.html" class="back-home">⬅ 返回大厅</a>
+
     <div class="card">
-        <div class="category" id="ui-category">准备游戏</div>
-        <div class="word" id="ui-word">???</div>
-        <div class="hint" id="ui-hint">点击下方按钮开始抽牌</div>
-        <div class="timer" id="ui-timer">60s</div>
+        <div class="category" id="category">准备就绪</div>
+        <div class="word" id="word">点下发牌</div>
+        <div class="timer" id="timer">60s</div>
     </div>
 
-    <div class="action-group" id="action-group">
-        <button class="btn-wrong" onclick="recordResult(false)">❌ 没猜出</button>
-        <button class="btn-correct" onclick="recordResult(true)">✅ 猜对了</button>
-    </div>
-
-    <button class="btn-draw" id="draw-btn" onclick="fetchNewCard()">开始抽牌</button>
-
-    <div class="history-board">
-        <h3>📝 游戏记录 (共 <span id="total-count">0</span> 局)</h3>
-        <ul class="history-list" id="history-list">
-            </ul>
-    </div>
+    <button class="btn" onclick="drawCard()">🃏 抽取题目</button>
 
     <script>
-        let countdownInterval;
-        let currentWord = ""; // 记录当前卡牌上的词语
-        let roundCount = 0;   // 记录玩了第几局
-
-        async function fetchNewCard() {
-            const btn = document.getElementById('draw-btn');
-            const wordEl = document.getElementById('ui-word');
-            const categoryEl = document.getElementById('ui-category');
-            const hintEl = document.getElementById('ui-hint');
-            const timerEl = document.getElementById('ui-timer');
-            const actionGroup = document.getElementById('action-group');
-
-            // 抽牌时隐藏打分按钮
-            actionGroup.style.display = "none";
-            btn.style.display = "block";
-            btn.disabled = true; 
-            btn.innerText = "发牌官正在洗牌...";
-            wordEl.innerText = "👀"; 
-            categoryEl.innerText = "请求中"; 
-            hintEl.innerText = "正在从 AI 词库中抽取...";
-            clearInterval(countdownInterval); 
-            timerEl.innerText = "60s";
+        let countdown;
+        
+        async function drawCard() {
+            document.getElementById('word').innerText = "加载中...";
+            document.getElementById('category').innerText = "请求中";
+            clearInterval(countdown);
+            document.getElementById('timer').innerText = "60s";
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/draw_card');
-                const result = await response.json();
-                if(result.status === "success") {
-                    currentWord = result.data.word; // 记下当前的词语
-                    wordEl.innerText = currentWord; 
-                    categoryEl.innerText = result.data.category; 
-                    hintEl.innerText = result.data.hint;
-                    startTimer(60, timerEl);
-                    
-                    // 牌发出来了，隐藏抽牌按钮，显示打分按钮
-                    btn.style.display = "none";
-                    actionGroup.style.display = "flex";
+                // 核心关键：标准的相对路径
+                const response = await fetch('/api/draw_card');
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    document.getElementById('word').innerText = data.word;
+                    document.getElementById('category').innerText = data.category;
+                    startTimer();
+                } else {
+                    document.getElementById('word').innerText = "发牌失败";
+                    // 打印出后端到底报了什么错
+                    document.getElementById('category').innerText = data.message.substring(0, 10);
                 }
             } catch (error) {
-                wordEl.innerText = "网络断开"; hintEl.innerText = "请检查后端是否运行";
-            } finally {
-                btn.disabled = false; btn.innerText = "下一题";
+                // 如果是这里报错，说明前端压根没连上后端
+                document.getElementById('word').innerText = "网络断开";
+                document.getElementById('category').innerText = "请检查后端";
+                console.error("Fetch Error:", error);
             }
         }
 
-        // 记录成绩函数
-        function recordResult(isCorrect) {
-            roundCount++;
-            const listEl = document.getElementById('history-list');
-            const countEl = document.getElementById('total-count');
-            
-            // 创建一条新的记录记录
-            const li = document.createElement('li');
-            const statusHtml = isCorrect ? '<span class="status-yes">✅ 猜对</span>' : '<span class="status-no">❌ 没猜出</span>';
-            li.innerHTML = `<span>第 ${roundCount} 局: <b>${currentWord}</b></span> ${statusHtml}`;
-            
-            // 把记录插到列表最前面
-            listEl.prepend(li);
-            countEl.innerText = roundCount;
-
-            // 停止当前倒计时
-            clearInterval(countdownInterval);
-            
-            // 隐藏打分按钮，重新显示抽牌按钮
-            document.getElementById('action-group').style.display = "none";
-            const btn = document.getElementById('draw-btn');
-            btn.style.display = "block";
-            btn.innerText = "抽取下一题";
-        }
-
-        function startTimer(seconds, displayElement) {
-            let timeLeft = seconds;
-            displayElement.innerText = timeLeft + "s";
-            countdownInterval = setInterval(() => {
+        function startTimer() {
+            let timeLeft = 60;
+            document.getElementById('timer').innerText = timeLeft + "s";
+            countdown = setInterval(() => {
                 timeLeft--;
-                displayElement.innerText = timeLeft + "s";
-                if (timeLeft <= 0) {
-                    clearInterval(countdownInterval);
-                    displayElement.innerText = "时间到!"; displayElement.style.color = "#ff3d00";
-                } else {
-                    displayElement.style.color = "#1a73e8";
-                }
+                document.getElementById('timer').innerText = timeLeft + "s";
+                if (timeLeft <= 0) clearInterval(countdown);
             }, 1000);
         }
     </script>

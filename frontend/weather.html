@@ -39,7 +39,7 @@
             
             try {
                 // 向你的 FastAPI 后端要数据
-                const response = await fetch('http://127.0.0.1:8000/api/report');
+                const response = await fetch('/api/report');
                 const data = await response.json();
                 
                 // 把 AI 写的话显示出来
