@@ -2,97 +2,120 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 你画我猜 - 完美还原版</title>
+    <title>你画我猜 - 终极发牌器</title>
     <style>
-        body { margin: 0; padding: 0; font-family: 'PingFang SC', sans-serif; background-color: #fcd53f; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        .card { background: white; width: 300px; height: 460px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 20px; box-sizing: border-box; }
-        .category { background: #ff4757; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; position: absolute; top: 20px; }
-        
-        /* 词语与提示的原始布局 */
-        .word { font-size: 48px; font-weight: 900; color: #333; margin-top: 40px; margin-bottom: 5px; text-align: center; }
-        .hint { font-size: 14px; color: #888; margin-bottom: 25px; text-align: center; line-height: 1.4; min-height: 40px; }
-        
-        .timer { font-size: 32px; color: #2e86de; font-family: monospace; font-weight: bold; margin-bottom: 20px; }
-        
-        /* 对错与统计模块 */
-        .controls { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; }
-        .btn-sm { flex: 1; padding: 12px; border: none; border-radius: 12px; color: white; cursor: pointer; font-weight: bold; }
-        .btn-correct { background: #2ed573; }
-        .btn-wrong { background: #ff4757; }
-        .btn-draw { width: 100%; background: #2e86de; color: white; border: none; padding: 15px; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        
-        .stats { margin-top: 20px; background: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: 15px; font-size: 14px; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background-color: #ffde59; display: flex; flex-direction: column; align-items: center; padding: 40px 0; margin: 0; min-height: 100vh; }
+        .back-home { position: absolute; top: 20px; left: 20px; color: #333; text-decoration: none; font-weight: bold; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card { background: white; width: 320px; height: 380px; border-radius: 20px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 20px; text-align: center; z-index: 10; }
+        .category { position: absolute; top: 20px; background: #ff5757; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+        .word { font-size: 44px; font-weight: 900; color: #333; margin: 20px 0; letter-spacing: 2px; }
+        .hint { font-size: 16px; color: #666; margin-bottom: 20px; }
+        .timer { font-size: 36px; font-weight: bold; color: #1a73e8; font-family: monospace; }
+        .action-group { margin-top: 20px; display: flex; gap: 15px; display: none; }
+        .btn-correct { background: #00c853; color: white; border: none; padding: 12px 25px; font-size: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .btn-wrong { background: #ff3d00; color: white; border: none; padding: 12px 25px; font-size: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .btn-draw { margin-top: 30px; background: #1a73e8; color: white; border: none; padding: 15px 40px; font-size: 20px; font-weight: bold; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(26,115,232,0.4); }
+        .btn-draw:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
+        .history-board { margin-top: 40px; background: white; width: 320px; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .history-board h3 { margin-top: 0; text-align: center; color: #333; }
+        .history-list { list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto; }
+        .history-list li { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; font-size: 16px; }
+        .status-yes { color: #00c853; font-weight: bold; }
+        .status-no { color: #ff3d00; font-weight: bold; }
     </style>
 </head>
 <body>
+    <a href="/index.html" class="back-home">⬅ 返回大厅</a>
+    
     <div class="card">
-        <div class="category" id="category">准备就绪</div>
-        <div class="word" id="word">点下发牌</div>
-        <div class="hint" id="hint">AI 老师准备好发牌了</div>
-        
-        <div class="timer" id="timer">60s</div>
-
-        <div class="controls" id="result-btns" style="display: none;">
-            <button class="btn-sm btn-correct" onclick="handleResult(true)">✅ 猜对了</button>
-            <button class="btn-sm btn-wrong" onclick="handleResult(false)">❌ 没猜中</button>
-        </div>
-
-        <button class="btn-draw" id="draw-btn" onclick="drawCard()">🃏 抽取题目</button>
+        <div class="category" id="ui-category">准备游戏</div>
+        <div class="word" id="ui-word">???</div>
+        <div class="hint" id="ui-hint">点击下方按钮开始抽牌</div>
+        <div class="timer" id="ui-timer">60s</div>
     </div>
 
-    <div class="stats">
-        📊 记录：共 <span id="total-rounds">0</span> 局 | 成功 <span id="success-count">0</span>
+    <div class="action-group" id="action-group">
+        <button class="btn-wrong" onclick="recordResult(false)">❌ 没猜出</button>
+        <button class="btn-correct" onclick="recordResult(true)">✅ 猜对了</button>
+    </div>
+
+    <button class="btn-draw" id="draw-btn" onclick="fetchNewCard()">开始抽牌</button>
+
+    <div class="history-board">
+        <h3>📝 游戏记录 (共 <span id="total-count">0</span> 局)</h3>
+        <ul class="history-list" id="history-list"></ul>
     </div>
 
     <script>
-        let countdown;
-        let total = 0, success = 0;
+        let countdownInterval;
+        let currentWord = "";
+        let roundCount = 0;
 
-        async function drawCard() {
-            document.getElementById('word').innerText = "出题中...";
-            document.getElementById('hint').innerText = "正在通过秘籍生成绘画建议...";
-            
+        async function fetchNewCard() {
+            const btn = document.getElementById('draw-btn');
+            const wordEl = document.getElementById('ui-word');
+            const categoryEl = document.getElementById('ui-category');
+            const hintEl = document.getElementById('ui-hint');
+            const timerEl = document.getElementById('ui-timer');
+            const actionGroup = document.getElementById('action-group');
+
+            actionGroup.style.display = "none";
+            btn.style.display = "block";
+            btn.disabled = true; 
+            btn.innerText = "发牌官正在洗牌...";
+            wordEl.innerText = "👀"; 
+            categoryEl.innerText = "请求中"; 
+            hintEl.innerText = "正在从 AI 词库中抽取...";
+            clearInterval(countdownInterval); 
+            timerEl.innerText = "60s";
+
             try {
+                // 【核心修复】改为相对路径确保上线后不报错
                 const response = await fetch('/api/draw_card');
-                const data = await response.json();
-                
-                if (data.status === "success") {
-                    document.getElementById('word').innerText = data.word;
-                    document.getElementById('category').innerText = data.category;
-                    // 展示 AI 吐出的高价值绘画提示
-                    document.getElementById('hint').innerText = "💡 " + data.hint;
-                    
-                    document.getElementById('result-btns').style.display = "flex";
-                    startTimer();
+                const result = await response.json();
+                if(result.status === "success") {
+                    currentWord = result.data.word;
+                    wordEl.innerText = currentWord; 
+                    categoryEl.innerText = result.data.category; 
+                    hintEl.innerText = result.data.hint;
+                    startTimer(60, timerEl);
+                    btn.style.display = "none";
+                    actionGroup.style.display = "flex";
                 }
             } catch (error) {
-                document.getElementById('word').innerText = "断开啦";
+                wordEl.innerText = "网络断开"; hintEl.innerText = "请检查后端是否运行";
+            } finally {
+                btn.disabled = false; btn.innerText = "下一题";
             }
         }
 
-        function startTimer() {
-            let timeLeft = 60;
-            clearInterval(countdown);
-            countdown = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer').innerText = timeLeft + "s";
-                if (timeLeft <= 0) {
-                    clearInterval(countdown);
-                    handleResult(false);
-                }
-            }, 1000);
+        function recordResult(isCorrect) {
+            roundCount++;
+            const listEl = document.getElementById('history-list');
+            const countEl = document.getElementById('total-count');
+            const li = document.createElement('li');
+            const statusHtml = isCorrect ? '<span class="status-yes">✅ 猜对</span>' : '<span class="status-no">❌ 没猜出</span>';
+            li.innerHTML = `<span>第 ${roundCount} 局: <b>${currentWord}</b></span> ${statusHtml}`;
+            listEl.prepend(li);
+            countEl.innerText = roundCount;
+            clearInterval(countdownInterval);
+            document.getElementById('action-group').style.display = "none";
+            const btn = document.getElementById('draw-btn');
+            btn.style.display = "block";
+            btn.innerText = "抽取下一题";
         }
 
-        function handleResult(isSuccess) {
-            clearInterval(countdown);
-            total++;
-            if(isSuccess) success++;
-            document.getElementById('total-rounds').innerText = total;
-            document.getElementById('success-count').innerText = success;
-            document.getElementById('result-btns').style.display = "none";
-            document.getElementById('word').innerText = "准备好下个词了吗？";
-            document.getElementById('hint').innerText = "等待发牌中...";
+        function startTimer(seconds, displayElement) {
+            let timeLeft = seconds;
+            displayElement.innerText = timeLeft + "s";
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                displayElement.innerText = timeLeft + "s";
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    displayElement.innerText = "时间到!";
+                }
+            }, 1000);
         }
     </script>
 </body>

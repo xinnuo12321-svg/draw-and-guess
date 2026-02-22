@@ -3,43 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XinNuo 的全栈实验室</title>
+    <title>DeepSeek 私人情报站</title>
     <style>
-        body { font-family: 'PingFang SC', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .header { text-align: center; margin-bottom: 40px; }
-        .header h1 { color: #333; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; width: 100%; max-width: 800px; }
-        .app-card { background: white; padding: 30px 20px; border-radius: 15px; text-align: center; text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; }
-        .app-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .icon { font-size: 40px; margin-bottom: 10px; }
-        .title { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
-        .desc { font-size: 12px; color: #888; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 50px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+        button { background: #1a73e8; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #1557b0; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #report-box { margin-top: 25px; padding: 20px; background: #e8f0fe; border-left: 5px solid #1a73e8; border-radius: 4px; text-align: left; font-size: 16px; line-height: 1.6; color: #333; display: none; }
+        .spinner { font-size: 14px; color: #666; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🚀 XinNuo 的项目大厅</h1>
-        <p>基于 FastAPI + Vue + AI 大模型构建</p>
+    <div class="card">
+        <h2>🤖 DeepSeek V3 专属早报</h2>
+        <p style="color: #666; font-size: 14px;">自动抓取公开天气 -> 喂给 V3 引擎 -> 生成私人播报</p>
+        <button id="btn" onclick="generateReport()">一键生成今日早报</button>
+        <div id="loading" class="spinner">🧠 AI 正在极速思考中...</div>
+        <div id="report-box"></div>
+        <br><br>
+        <a href="/draw.html" style="color: #1a73e8; font-weight: bold;">➡️ 切换到你画我猜</a>
     </div>
 
-    <div class="grid">
-        <a href="/draw.html" class="app-card">
-            <div class="icon">🎨</div>
-            <div class="title">你画我猜</div>
-            <div class="desc">DeepSeek 自动出题器</div>
-        </a>
-
-        <a href="/weather.html" class="app-card">
-            <div class="icon">🌤️</div>
-            <div class="title">毒舌天气</div>
-            <div class="desc">AI 专属穿衣吐槽</div>
-        </a>
-
-        <a href="#" class="app-card" style="opacity: 0.5; cursor: not-allowed;">
-            <div class="icon">🦁</div>
-            <div class="title">动物剧场</div>
-            <div class="desc">下一站建设中...</div>
-        </a>
-    </div>
+    <script>
+        async function generateReport() {
+            const btn = document.getElementById('btn');
+            const loading = document.getElementById('loading');
+            const reportBox = document.getElementById('report-box');
+            btn.disabled = true;
+            loading.style.display = "block";
+            reportBox.style.display = "none";
+            try {
+                // 【核心修复】改为相对路径
+                const response = await fetch('/api/report');
+                const data = await response.json();
+                reportBox.innerHTML = `<strong>📡 V3 播报：</strong><br><br>${data.ai_report}`;
+                reportBox.style.display = "block";
+            } catch (error) {
+                reportBox.innerHTML = "❌ 请求服务器失败。";
+                reportBox.style.display = "block";
+            } finally {
+                btn.disabled = false;
+                loading.style.display = "none";
+            }
+        }
+    </script>
 </body>
 </html>

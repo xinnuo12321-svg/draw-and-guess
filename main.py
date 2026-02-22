@@ -1,36 +1,86 @@
-@app.get("/api/draw_card")
-async def draw_card():
-    # 强制大模型输出 JSON 格式，这是获取“绘画提示”的关键
-    system_prompt = """你是一个“你画我猜”游戏的发牌器。
-    请随机生成一个适合用来画画猜谜的词语。
-    必须严格以 JSON 格式返回，不要有任何 Markdown 包裹，不要有任何多余文字。
-    包含字段：
-    - "word": 要猜的词语
-    - "category": 词语分类（如：成语、动物、生活用品等）
-    - "hint": 15字以内带emoji的简短绘画提示，严禁出现原词。
-    示例：{"word": "九牛一毛", "category": "成语", "hint": "画很多牛和一根毛 🐂"}
-    """
+import os
+import json
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import httpx
+from dotenv import load_dotenv
+from openai import AsyncOpenAI
+
+# 1. 加载配置
+load_dotenv()
+API_KEY = os.getenv("SILICONFLOW_API_KEY")
+
+client = AsyncOpenAI(
+    api_key=API_KEY,
+    base_url="https://api.siliconflow.cn/v1"
+)
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ==========================================
+# 🚀 模块一：天气早报 API
+# ==========================================
+@app.get("/api/report")
+async def generate_morning_report():
+    url = "http://t.weather.itboy.net/api/weather/city/101010100"
+    try:
+        async with httpx.AsyncClient(proxy=None, timeout=10.0) as http_client:
+            response = await http_client.get(url)
+            data = response.json()
+            if data.get("status") == 200:
+                city = data["cityInfo"]["city"]
+                forecast = data["data"]["forecast"][0] 
+                weather_info = f"{city}今天{forecast['type']}，{forecast['low']}到{forecast['high']}。提示：{forecast['notice']}"
+            else:
+                weather_info = "气象局接口开了小差"
+    except Exception as e:
+        weather_info = "天气获取失败"
+
+    system_prompt = "你是一个幽默、毒舌但贴心的私人助理。请根据我提供的数据，写一段100字以内的早安播报。"
+    user_prompt = f"今天的天气情报是：{weather_info}。请给我今天的早报！"
     
     try:
-        response = await client.chat.completions.create(
+        completion = await client.chat.completions.create(
             model="deepseek-ai/DeepSeek-V3",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": "请发一张牌"}
-            ],
-            temperature=0.9, # 调高一点随机性
-            response_format={ 'type': 'json_object' } # 强制 JSON 输出
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            temperature=0.7
         )
-        
-        # 将字符串解析为字典
-        import json
-        result = json.loads(response.choices[0].message.content)
-        
-        return {
-            "status": "success",
-            "word": result["word"],
-            "category": result["category"],
-            "hint": result["hint"]
-        }
+        ai_report = completion.choices[0].message.content
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        ai_report = f"AI 大脑连接失败: {e}"
+
+    return {"status": "success", "ai_report": ai_report}
+
+# ==========================================
+# 🎨 模块二：你画我猜发牌器 API
+# ==========================================
+@app.get("/api/draw_card")
+async def draw_card():
+    system_prompt = """你是一个“你画我猜”游戏的发牌器。
+    请随机生成一个适合用来画画猜谜的词语。
+    必须严格以 JSON 格式返回，包含："word"(要猜的词语), "category"(分类), "hint"(带emoji的简短提示，不要出现原词)。
+    示例：{"word": "九牛一毛", "category": "成语", "hint": "画很多牛和一根毛 🐂"}
+    """
+    try:
+        completion = await client.chat.completions.create(
+            model="deepseek-ai/DeepSeek-V3",
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": "发牌！给我一个新词。"}],
+            temperature=0.9, 
+            response_format={"type": "json_object"} 
+        )
+        card_data = json.loads(completion.choices[0].message.content)
+        return {"status": "success", "data": card_data}
+    except Exception as e:
+        return {"status": "error", "data": {"word": "发牌失败", "category": "错误", "hint": "请检查网络"}}
+
+# 🌐 静态网页挂载
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
