@@ -1,57 +1,36 @@
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-import os
-from openai import AsyncOpenAI
-import random
-
-app = FastAPI()
-
-# 1. 初始化 AI 客户端
-api_key = os.getenv("SILICONFLOW_API_KEY")
-client = AsyncOpenAI(api_key=api_key, base_url="https://api.siliconflow.cn/v1")
-
-# ==========================================
-# 🎨 模块一：你画我猜出题器
-# ==========================================
 @app.get("/api/draw_card")
 async def draw_card():
-    topics = ["动物", "日常用品", "食物", "交通工具", "常见职业", "水果"]
-    selected_topic = random.choice(topics)
+    # 强制大模型输出 JSON 格式，这是获取“绘画提示”的关键
+    system_prompt = """你是一个“你画我猜”游戏的发牌器。
+    请随机生成一个适合用来画画猜谜的词语。
+    必须严格以 JSON 格式返回，不要有任何 Markdown 包裹，不要有任何多余文字。
+    包含字段：
+    - "word": 要猜的词语
+    - "category": 词语分类（如：成语、动物、生活用品等）
+    - "hint": 15字以内带emoji的简短绘画提示，严禁出现原词。
+    示例：{"word": "九牛一毛", "category": "成语", "hint": "画很多牛和一根毛 🐂"}
+    """
     
     try:
         response = await client.chat.completions.create(
             model="deepseek-ai/DeepSeek-V3",
             messages=[
-                {"role": "system", "content": "你是一个你画我猜出题助手。"},
-                {"role": "user", "content": f"请给出一个属于【{selected_topic}】类别的词语。只需输出词语本身，不要废话。"}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": "请发一张牌"}
             ],
-            temperature=0.8
+            temperature=0.9, # 调高一点随机性
+            response_format={ 'type': 'json_object' } # 强制 JSON 输出
         )
-        word = response.choices[0].message.content.strip()
-        return {"status": "success", "word": word, "category": selected_topic}
+        
+        # 将字符串解析为字典
+        import json
+        result = json.loads(response.choices[0].message.content)
+        
+        return {
+            "status": "success",
+            "word": result["word"],
+            "category": result["category"],
+            "hint": result["hint"]
+        }
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
-# ==========================================
-# 🌤️ 模块二：毒舌天气预报
-# ==========================================
-@app.get("/api/weather")
-async def get_weather(city: str = "北京"):
-    try:
-        response = await client.chat.completions.create(
-            model="deepseek-ai/DeepSeek-V3",
-            messages=[
-                {"role": "system", "content": "你是一个幽默、犀利、有点毒舌的天气播报员。"},
-                {"role": "user", "content": f"请吐槽一下【{city}】今天的天气，给出穿衣或出门建议。字数50字以内，要好玩！"}
-            ],
-            temperature=0.8
-        )
-        report = response.choices[0].message.content.strip()
-        return {"status": "success", "city": city, "report": report}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-# ==========================================
-# ⚠️ 必须放在最底部：挂载前端网页
-# ==========================================
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

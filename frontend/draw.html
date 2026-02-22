@@ -3,36 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 你画我猜 - 终极完全版</title>
+    <title>AI 你画我猜 - 完美还原版</title>
     <style>
         body { margin: 0; padding: 0; font-family: 'PingFang SC', sans-serif; background-color: #fcd53f; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        .card { background: white; width: 300px; height: 450px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 20px; }
+        .card { background: white; width: 300px; height: 460px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 20px; box-sizing: border-box; }
         .category { background: #ff4757; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; position: absolute; top: 20px; }
         
-        /* 核心视觉还原 */
+        /* 词语与提示的原始布局 */
         .word { font-size: 48px; font-weight: 900; color: #333; margin-top: 40px; margin-bottom: 5px; text-align: center; }
-        .hint { font-size: 14px; color: #888; margin-bottom: 25px; text-align: center; padding: 0 10px; min-height: 20px; }
+        .hint { font-size: 14px; color: #888; margin-bottom: 25px; text-align: center; line-height: 1.4; min-height: 40px; }
         
         .timer { font-size: 32px; color: #2e86de; font-family: monospace; font-weight: bold; margin-bottom: 20px; }
         
-        /* 对错功能模块 */
+        /* 对错与统计模块 */
         .controls { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; }
-        .btn-sm { flex: 1; padding: 12px; border: none; border-radius: 12px; color: white; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
-        .btn-correct { background: #2ed573; box-shadow: 0 4px 10px rgba(46, 213, 115, 0.3); }
-        .btn-wrong { background: #ff4757; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
-        .btn-sm:active { transform: scale(0.95); }
-
-        .btn-draw { width: 100%; background: #2e86de; color: white; border: none; padding: 15px; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(46, 134, 222, 0.4); }
+        .btn-sm { flex: 1; padding: 12px; border: none; border-radius: 12px; color: white; cursor: pointer; font-weight: bold; }
+        .btn-correct { background: #2ed573; }
+        .btn-wrong { background: #ff4757; }
+        .btn-draw { width: 100%; background: #2e86de; color: white; border: none; padding: 15px; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer; }
         
-        /* 牌局记录模块 */
-        .stats { margin-top: 20px; background: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: 15px; font-size: 14px; color: #333; font-weight: bold; }
+        .stats { margin-top: 20px; background: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: 15px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="category" id="category">准备就绪</div>
         <div class="word" id="word">点下发牌</div>
-        <div class="hint" id="hint">点击下方按钮开始游戏</div>
+        <div class="hint" id="hint">AI 老师准备好发牌了</div>
         
         <div class="timer" id="timer">60s</div>
 
@@ -50,13 +47,11 @@
 
     <script>
         let countdown;
-        let total = 0;
-        let success = 0;
+        let total = 0, success = 0;
 
         async function drawCard() {
-            document.getElementById('word').innerText = "思考中...";
-            document.getElementById('hint').innerText = "AI 正在使劲出题...";
-            document.getElementById('draw-btn').disabled = true;
+            document.getElementById('word').innerText = "出题中...";
+            document.getElementById('hint').innerText = "正在通过秘籍生成绘画建议...";
             
             try {
                 const response = await fetch('/api/draw_card');
@@ -65,30 +60,26 @@
                 if (data.status === "success") {
                     document.getElementById('word').innerText = data.word;
                     document.getElementById('category').innerText = data.category;
-                    document.getElementById('hint').innerText = data.hint || "发挥想象力画出来吧！";
+                    // 展示 AI 吐出的高价值绘画提示
+                    document.getElementById('hint').innerText = "💡 " + data.hint;
                     
-                    // 显示对错按钮
                     document.getElementById('result-btns').style.display = "flex";
                     startTimer();
                 }
             } catch (error) {
-                document.getElementById('word').innerText = "网络断开";
-                document.getElementById('hint').innerText = "请检查后端是否在跑";
-            } finally {
-                document.getElementById('draw-btn').disabled = false;
+                document.getElementById('word').innerText = "断开啦";
             }
         }
 
         function startTimer() {
             let timeLeft = 60;
             clearInterval(countdown);
-            document.getElementById('timer').innerText = timeLeft + "s";
             countdown = setInterval(() => {
                 timeLeft--;
                 document.getElementById('timer').innerText = timeLeft + "s";
                 if (timeLeft <= 0) {
                     clearInterval(countdown);
-                    handleResult(false); // 超时自动判定为没猜中
+                    handleResult(false);
                 }
             }, 1000);
         }
@@ -97,16 +88,11 @@
             clearInterval(countdown);
             total++;
             if(isSuccess) success++;
-            
-            // 更新统计
             document.getElementById('total-rounds').innerText = total;
             document.getElementById('success-count').innerText = success;
-            
-            // 恢复初始状态
             document.getElementById('result-btns').style.display = "none";
             document.getElementById('word').innerText = "准备好下个词了吗？";
-            document.getElementById('hint').innerText = "点击下方按钮继续";
-            document.getElementById('timer').innerText = "60s";
+            document.getElementById('hint').innerText = "等待发牌中...";
         }
     </script>
 </body>
