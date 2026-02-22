@@ -3,68 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 你画我猜发牌器</title>
+    <title>AI 你画我猜 - 完全版</title>
     <style>
-        body { margin: 0; padding: 0; font-family: 'PingFang SC', sans-serif; background-color: #fcd53f; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; position: relative; }
-        .back-home { position: absolute; top: 20px; left: 20px; color: #333; text-decoration: none; font-weight: bold; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .card { background: white; width: 300px; height: 400px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        .category { background: #ff4757; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; position: absolute; top: 20px; }
-        .word { font-size: 48px; font-weight: 900; color: #333; margin: 20px 0; }
-        .timer { font-size: 30px; color: #2e86de; font-family: monospace; }
-        .btn { margin-top: 30px; background: #2e86de; color: white; border: none; padding: 15px 40px; font-size: 18px; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(46, 134, 222, 0.4); }
-        .btn:active { transform: scale(0.95); }
+        body { margin: 0; padding: 0; font-family: 'PingFang SC', sans-serif; background-color: #fcd53f; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        .card { background: white; width: 320px; min-height: 450px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; align-items: center; padding: 20px; position: relative; }
+        .category { background: #ff4757; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; margin-top: 10px; }
+        .word { font-size: 42px; font-weight: 900; color: #333; margin: 20px 0; }
+        .hint-box { background: #f1f2f6; padding: 15px; border-radius: 10px; font-size: 14px; color: #57606f; width: 100%; box-sizing: border-box; margin-bottom: 20px; border-left: 5px solid #2e86de; }
+        .timer { font-size: 24px; color: #2e86de; font-weight: bold; }
+        .controls { display: flex; gap: 10px; width: 100%; margin-top: 15px; }
+        .btn-sm { flex: 1; padding: 10px; border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: bold; }
+        .btn-correct { background: #2ed573; }
+        .btn-wrong { background: #ff4757; }
+        .btn-draw { width: 100%; background: #2e86de; color: white; border: none; padding: 15px; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .stats { margin-top: 20px; background: rgba(255,255,255,0.8); padding: 10px 20px; border-radius: 15px; font-size: 14px; color: #333; }
     </style>
 </head>
 <body>
-    <a href="/index.html" class="back-home">⬅ 返回大厅</a>
-
     <div class="card">
         <div class="category" id="category">准备就绪</div>
-        <div class="word" id="word">点下发牌</div>
+        <div class="word" id="word">开始游戏</div>
+        
+        <div class="hint-box" id="hint">
+            <strong>💡 绘画提示：</strong><br>
+            <span id="hint-text">点击下方按钮获取题目和提示。</span>
+        </div>
+
         <div class="timer" id="timer">60s</div>
+
+        <div class="controls" id="result-btns" style="display: none;">
+            <button class="btn-sm btn-correct" onclick="handleResult(true)">✅ 猜对了</button>
+            <button class="btn-sm btn-wrong" onclick="handleResult(false)">❌ 没猜中</button>
+        </div>
+
+        <button class="btn-draw" id="draw-btn" onclick="drawCard()">🃏 抽取题目</button>
     </div>
 
-    <button class="btn" onclick="drawCard()">🃏 抽取题目</button>
+    <div class="stats">
+        📊 记录：共 <span id="total-rounds">0</span> 局 | 成功 <span id="success-count">0</span>
+    </div>
 
     <script>
         let countdown;
-        
-        async function drawCard() {
-            document.getElementById('word').innerText = "加载中...";
-            document.getElementById('category').innerText = "请求中";
-            clearInterval(countdown);
-            document.getElementById('timer').innerText = "60s";
+        let total = 0, success = 0;
 
+        async function drawCard() {
+            document.getElementById('word').innerText = "思考中...";
+            document.getElementById('draw-btn').disabled = true;
+            
             try {
-                // 核心关键：标准的相对路径
+                // 【已严审】使用相对路径，绝不扫描本地电脑
                 const response = await fetch('/api/draw_card');
                 const data = await response.json();
                 
                 if (data.status === "success") {
                     document.getElementById('word').innerText = data.word;
                     document.getElementById('category').innerText = data.category;
+                    document.getElementById('hint-text').innerText = data.hint || "发挥你的想象力画出来吧！";
+                    document.getElementById('result-btns').style.display = "flex";
                     startTimer();
-                } else {
-                    document.getElementById('word').innerText = "发牌失败";
-                    // 打印出后端到底报了什么错
-                    document.getElementById('category').innerText = data.message.substring(0, 10);
                 }
-            } catch (error) {
-                // 如果是这里报错，说明前端压根没连上后端
+            } catch (e) {
                 document.getElementById('word').innerText = "网络断开";
-                document.getElementById('category').innerText = "请检查后端";
-                console.error("Fetch Error:", error);
+            } finally {
+                document.getElementById('draw-btn').disabled = false;
             }
         }
 
         function startTimer() {
             let timeLeft = 60;
-            document.getElementById('timer').innerText = timeLeft + "s";
+            clearInterval(countdown);
             countdown = setInterval(() => {
                 timeLeft--;
                 document.getElementById('timer').innerText = timeLeft + "s";
-                if (timeLeft <= 0) clearInterval(countdown);
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    handleResult(false);
+                }
             }, 1000);
+        }
+
+        function handleResult(isSuccess) {
+            clearInterval(countdown);
+            total++;
+            if(isSuccess) success++;
+            document.getElementById('total-rounds').innerText = total;
+            document.getElementById('success-count').innerText = success;
+            document.getElementById('result-btns').style.display = "none";
+            document.getElementById('word').innerText = "下一局？";
         }
     </script>
 </body>
